@@ -14,5 +14,5 @@ RUN apk add lynx
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 #RUN apt install tmux
 #USER node
-WORKDIR /morestuff
+WORKDIR /chatapp
 COPY . .

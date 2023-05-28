@@ -25,8 +25,9 @@ rl.on('SIGINT', function() {
   console.log("Starting Quit");
   rlQuit.question('If you want to save the conversation as a file, type in the filename now otherwise hit enter: ', (file) => {
     if (file) {
-      let data = messages.map(message => `${message.role}: ${message.content}`).join('\n');
-      fs.writeFile(file, data, (err) => {
+        let data = messages.map(message => `${message.role}: ${message.content}`).join('\n---\n');
+        
+        fs.writeFile(file, data, (err) => {
         if (err) throw err;
         console.log('The file has been saved!');
         rlQuit.close();
@@ -42,21 +43,20 @@ rl.on('SIGINT', function() {
 
 
 const parseFileContent = (content) => {
-  const lines = content.split('\n');
-  return lines.map(line => {
-    let [role, ...contentParts] = line.split(/:(.+)/);
+  const messageStrings = content.split('\n---\n');
+  return messageStrings.map(messageString => {
+    let [role, ...contentParts] = messageString.split(/:(.+)/);
     role = role.trim().toLowerCase();
 
     // Ensure the role is one of the valid values
     if (!['system', 'user', 'assistant'].includes(role)) {
-      throw new Error(`Invalid role '${role}' in line '${line}'`);
+      throw new Error(`Invalid role '${role}' in message '${messageString}'`);
     }
 
-    const content = contentParts[0].trim();
+    const content = contentParts.join(':').trim(); // join the content parts to allow for colons in the message content
     return { role, content };
   });
 };
-
 
 const promptSessionFile = () => {
   if (!isHandlingSIGINT) {

@@ -1,7 +1,0 @@
-system: You are a Helpful Assistant
-user: testing someting
-assistant: Sure, what would you like to test?
-user: triying something else more
-assistant: Okay, just let me know what you need help with. I'll do my best to assist you.
-user: what was my first message here?
-assistant: Your first message was "testing something".

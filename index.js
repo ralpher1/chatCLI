@@ -123,16 +123,10 @@ const promptUser = () => {
 
 
 var apiKey = process.env.OPENAI_API_KEY;
-const client = axios.create({
-  baseURL: 'https://api.openai.com',
-  headers: {
-    'Authorization': 'Bearer ' + apiKey,
-    'Content-Type': 'application/json',
-  },
-});
+
 let sMessage = 'You are a Helpful Assistant'  //default system message;
 var messages = []
-
+var client;
 
 let chosenModel = 'gpt-3.5-turbo';
 
@@ -141,7 +135,13 @@ let chosenModel = 'gpt-3.5-turbo';
 rl.question('Enter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
   if (key) { apiKey = key }
   if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); }
-
+  client = axios.create({
+    baseURL: 'https://api.openai.com',
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'application/json',
+    },
+  });
 
   promptSessionFile();
 })

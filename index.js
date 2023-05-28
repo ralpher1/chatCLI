@@ -4,8 +4,10 @@ const axios = require('axios');
 const readline = require('readline');
 const fs = require('fs');
 
+//Now I want to fix this so rl.on and sigint and sigterm all work within a docker container !! 
+//AND add some verbiage in FIRST prompt with instructions about what ctrl-c does etc etc and an intro etc etc
 
-  
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -15,7 +17,7 @@ const rl = readline.createInterface({
 let isHandlingSIGINT = false;
 
 
-rl.on('SIGINT', function() {
+rl.on('SIGINT', function () {
   rl.close(); // This will interrupt the current question
   // Now create a new readline interface for the quit prompt
   const rlQuit = readline.createInterface({
@@ -25,9 +27,9 @@ rl.on('SIGINT', function() {
   console.log("Starting Quit");
   rlQuit.question('If you want to save the conversation as a file, type in the filename now otherwise hit enter: ', (file) => {
     if (file) {
-        let data = messages.map(message => `${message.role}: ${message.content}`).join('\n---\n');
-        
-        fs.writeFile(file, data, (err) => {
+      let data = messages.map(message => `${message.role}: ${message.content}`).join('\n---\n');
+
+      fs.writeFile(file, data, (err) => {
         if (err) throw err;
         console.log('The file has been saved!');
         rlQuit.close();
@@ -88,16 +90,16 @@ const promptSessionFile = () => {
 const promptSystem = () => {
   if (!isHandlingSIGINT) {
     rl.question('System Message: ', (systemM) => {
-      if (systemM){sMessage = systemM}
+      if (systemM) { sMessage = systemM }
       console.log('You chose: ' + sMessage);
-      if (messages.length>0){
-      console.log("BUT we are using an existing conversation and that system message")
-      }else{
-      messages = [
-        { role: 'system', content: sMessage },
-      ];
+      if (messages.length > 0) {
+        console.log("BUT we are using an existing conversation and that system message")
+      } else {
+        messages = [
+          { role: 'system', content: sMessage },
+        ];
 
-}
+      }
       promptUser();
     });
   }
@@ -128,27 +130,27 @@ const client = axios.create({
     'Content-Type': 'application/json',
   },
 });
-let sMessage='You are a Helpful Assistant'  //default system message;
-var messages=[]
- 
+let sMessage = 'You are a Helpful Assistant'  //default system message;
+var messages = []
 
-let chosenModel='gpt-3.5-turbo';
+
+let chosenModel = 'gpt-3.5-turbo';
 
 //Now I just want to creaqte an rl.question like below but for the apiKey
 
 rl.question('Enter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
-  if (key){apiKey = key}
-  if (!key){console.log('You chose to use the env variable OPENAI_API_KEY');}
+  if (key) { apiKey = key }
+  if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); }
 
-  
- promptSessionFile();
+
+  promptSessionFile();
 })
 
 
 const promptChosenModel = () => {
   if (!isHandlingSIGINT) {
     rl.question('Choose a model (gpt-3.5-turbo, gpt-3.5, gpt-3, davinci): ', (model) => {
-      if (model){chosenModel = model}
+      if (model) { chosenModel = model }
       console.log('You chose: ' + chosenModel);
       promptSystem();
     });

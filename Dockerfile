@@ -3,7 +3,7 @@ RUN apt update && apt upgrade -y
 RUN npm install -y
 
 
-WORKDIR /morestuff
+WORKDIR /chatapp
 COPY . .
 CMD npm start
 

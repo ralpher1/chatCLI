@@ -1,6 +1,6 @@
 version: "3"
 services:
-  morestuff:
+  chatapp:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
@@ -12,7 +12,7 @@ services:
     #networks: 
     #  - mynet    
     volumes:
-      - ..:/morestuff 
+      - ..:/chatapp 
     command: /bin/sh -c "while sleep 1000;do :;done"
     depends_on:
       - postgresdb

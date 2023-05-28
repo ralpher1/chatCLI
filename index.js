@@ -120,7 +120,7 @@ const promptUser = () => {
 //This goal was to grab the model and then use it
 
 
-const apiKey = process.env.OPENAI_API_KEY;
+var apiKey = process.env.OPENAI_API_KEY;
 const client = axios.create({
   baseURL: 'https://api.openai.com',
   headers: {

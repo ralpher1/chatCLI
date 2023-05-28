@@ -1,0 +1,42 @@
+version: "3"
+services:
+  morestuff:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VERSION: 16
+    ports:
+      - "3000:3000"
+    #networks: 
+    #  - mynet    
+    volumes:
+      - ..:/morestuff 
+    command: /bin/sh -c "while sleep 1000;do :;done"
+    depends_on:
+      - mysqldb
+
+  mysqldb:  
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    #networks: 
+    #  - mynet
+    #expose: 
+    #   - '3306'
+    environment:
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_ROOT_PASSWORD: test1234
+      MYSQL_PASSWORD: test1234
+      MYSQL_DATABASE: test1  
+      MYSQL_USER: mysql1
+      #mysql user myswl database myswl password etc etc
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbstuff:/var/lib/mysql
+
+volumes:
+  dbstuff:
+
+          #networks:
+          # mynet:

@@ -6,6 +6,8 @@ const fs = require('fs');
 
 //Now I want to fix this so rl.on and sigint and sigterm all work within a docker container !! 
 //AND add some verbiage in FIRST prompt with instructions about what ctrl-c does etc etc and an intro etc etc
+//now maybe this all works and docker does work?
+//Now maybe lets add some code block extracting or something like that? Lets try to make this MORE interactive with /code or someting and we check the input from user and do stuff etc etc
 
 
 const rl = readline.createInterface({

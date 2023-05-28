@@ -40,14 +40,64 @@ rl.on('SIGINT', function() {
   });
 });
 
+
+const parseFileContent = (content) => {
+  const lines = content.split('\n');
+  return lines.map(line => {
+    let [role, ...contentParts] = line.split(/:(.+)/);
+    role = role.trim().toLowerCase();
+
+    // Ensure the role is one of the valid values
+    if (!['system', 'user', 'assistant'].includes(role)) {
+      throw new Error(`Invalid role '${role}' in line '${line}'`);
+    }
+
+    const content = contentParts[0].trim();
+    return { role, content };
+  });
+};
+
+
+const promptSessionFile = () => {
+  if (!isHandlingSIGINT) {
+    rl.question('Do you want to use an existing file/session? If yes, enter the filename: ', (file) => {
+      if (file) {
+        fs.readFile(file, 'utf8', (err, data) => {
+          if (err) {
+            console.error(`Failed to read file ${file}:`, err);
+            // If there was an error reading the file, just continue to the next prompt
+            promptChosenModel();
+          } else {
+            messages = parseFileContent(data);
+            promptChosenModel();
+          }
+        });
+      } else {
+        // If the user did not provide a file, just continue to the next prompt
+        promptChosenModel();
+      }
+    });
+  }
+};
+
+
+
+
+
+
 const promptSystem = () => {
   if (!isHandlingSIGINT) {
     rl.question('System Message: ', (systemM) => {
       if (systemM){sMessage = systemM}
       console.log('You chose: ' + sMessage);
+      if (messages.length>0){
+      console.log("BUT we are using an existing conversation and that system message")
+      }else{
       messages = [
         { role: 'system', content: sMessage },
       ];
+
+}
       promptUser();
     });
   }
@@ -90,8 +140,8 @@ rl.question('Enter API key or make sure that the OPENAI_API_KEY is set in the .e
   if (key){apiKey = key}
   if (!key){console.log('You chose to use the env variable OPENAI_API_KEY');}
 
-  promptChosenModel();
-
+  
+ promptSessionFile();
 })
 
 

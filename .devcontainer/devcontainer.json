@@ -2,13 +2,13 @@
 	"name": "template test redux",
 	"extensions": [],
 	"dockerComposeFile": "docker-compose.yaml",
-	"service": "morestuff",
+	"service": "chatapp",
 	//Need this otherwise default uses workspace folder
 	//can also create a dockersompoe file with a single service and refer to all that here and just handle mounting yourself with a simple volumen mount ..:/testredux or something
 	//"context": "..",
 	//"dockerFile": "Dockerfile",
 	//"workspaceMount": "source=${localWorkspaceFolder},target=/testRedux,type=bind",
-	"workspaceFolder": "/morestuff",
+	"workspaceFolder": "/chatapp",
 	"postCreateCommand": "npm install",
 	"settings": {
 		"editor.formatOnSave": true,

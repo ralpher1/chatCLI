@@ -1,5 +1,5 @@
 {
-	"name": "template test redux",
+	"name": "Another template test redux",
 	"extensions": [],
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "chatapp",

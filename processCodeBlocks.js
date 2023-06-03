@@ -1,15 +1,6 @@
-const readline = require('readline');
-const fs = require('fs');
-
-//export default function processCodeBlocks(string) {
 
 function processCodeBlocks(string) {
   const codeBlocks = string.match(/```([\s\S]*?)```/g) || [];
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
   let currentIndex = 0;
 
   function saveCodeBlock(codeBlock) {
@@ -46,7 +37,7 @@ function processCodeBlocks(string) {
       rl.close();
     }
   }
-
-  processNextCodeBlock();
+return codeBlocks;
+//return codeBlocks[0].replace(/```/g,'');
 }
 module.exports=processCodeBlocks;

@@ -134,7 +134,7 @@ let chosenModel = 'gpt-3.5-turbo';
 
 //Now I just want to creaqte an rl.question like below but for the apiKey
 
-rl.question('v1.07; Enter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
+rl.question('v1.08;\n\nNOTE: You can type /cb to grab a codeblock from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
   if (key) { apiKey = key }
   if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); }
   client = axios.create({

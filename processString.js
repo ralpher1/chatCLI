@@ -1,6 +1,27 @@
 
 const pc = require('./processCodeBlocks');
 
+function printColoredText(text, color) {
+  const colors = {
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    magenta: '\x1b[35m',
+    cyan: '\x1b[36m',
+    reset: '\x1b[0m'
+  };
+
+  // Check if the specified color exists
+  if (!colors[color]) {
+    console.error('Invalid color specified.');
+    return;
+  }
+
+  // Print the colored text
+  console.log(colors[color] + text + colors.reset);
+}
+
 let currentIndex = 0
 function processString(string) {
 
@@ -25,7 +46,8 @@ function processString(string) {
       console.log(`# ${currentIndex + 1} Code block found:`);
       console.log("---------------------");
       console.log(" ");
-      console.log(codeBlock);
+      //console.log(codeBlock);
+      printColoredText(codeBlock, "blue");
       console.log("---------------------");
       console.log(`******END BLOCK #${(currentIndex + 1)} **`);
       console.log("---------------------");

@@ -16,6 +16,8 @@ const clipboardy = require('clipboardy');
 //perhaps something that outputs a jira task or project or a few api requests to do so from your given codeblocks? etc etc
 // a /save would be a good feature just to do a default save midway just add a shared function so you dont repeat code and call it from suerpromt /save call etc etc let them choose file but have a default like before from their chosen at beggining etc etc
 
+//ADD COLORING THAT MAY BE COOL MAYBE EVEN GIVE AN OPTION TO TURN OFF AT BEGIN AS A STATE LIKE SAVEDFILE NAMES ETC ETC
+
 
 const rl = readline.createInterface({
   input: process.stdin,

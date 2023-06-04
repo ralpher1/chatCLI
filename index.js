@@ -5,6 +5,7 @@ const readline = require('readline');
 const fs = require('fs');
 const ps = require('./processString');
 const clipboardy = require('clipboardy');
+const package = require('./package.json');
 //const clip = require('./clip')
 //Now I want to fix this so rl.on and sigint and sigterm all work within a docker container !! 
 //AND add some verbiage in FIRST prompt with instructions about what ctrl-c does etc etc and an intro etc etc
@@ -28,6 +29,7 @@ const rl = readline.createInterface({
 let isHandlingSIGINT = false;
 let savedFile;
 let startedup;
+let fileadding;
 
 rl.on('SIGINT', function () {
   rl.close(); // This will interrupt the current question
@@ -253,11 +255,44 @@ const promptCodeProcessing = (blocks) => {
 const promptUser = () => {
   if (!isHandlingSIGINT) {
     rl.question('You: ', (userMessage) => {
+
       if (userMessage == '/clear') {
         console.log("CLEARING CONVERSATION");
         messages = [];
+        fileadding = null;
         promptSystem();
-      } else if (userMessage.split('/cb').length > 1) {
+      } else if (userMessage == '/current') {
+        console.log("Below is the current code we are adding to message: \n\n");
+        //going to fetch currently built messages incase we got something brewing etc etc
+        //also we want to add some PREFEIXES TO USERPROMT NOW IN REQUEST TO ASK FOR ALL CODE WITH FILES NAMES AND PATHS IN COMMESN FOR CODE BLCOK EXTARCTION
+        if (fileadding) { console.log(fileadding); };
+        promptUser();
+      } else if (userMessage.split('/fetch').length > 1) {
+
+        console.log("FETCHING FILERS FOR CONVERSATION");
+        //set messsages end with this file contents
+        //goto a new promtp or something thast hanedles thios
+        let nfile = userMessage.split('/fetch')[1].replace(" ", "");
+        fs.readFile(nfile, 'utf8', (err, data) => {
+          if (err) {
+            console.error(`Failed to read file ${nfile}:`, err);
+            console.log("We cant add that file to the conversation please try again")
+            // If there was an error reading the file, just continue to the next prompt
+            promptUser();
+          } else {
+
+            if (fileadding) {
+              fileadding = fileadding + "\n\n***********\n\n\n" + `Path/Filename ${nfile}: \n\n` + data;
+            } else {
+              fileadding = `Filename: ${nfile}: \n\n` + data;
+            }
+            console.log(`added ${nfile}`);
+            promptUser();
+          }
+        });
+        //promptSystem();
+      }
+      else if (userMessage.split('/cb').length > 1) {
         try {
           let chosennum = userMessage.split("/cb")[1];
           if (!chosennum) { chosennum = 1 }
@@ -289,11 +324,50 @@ const promptUser = () => {
         });
         console.log(`${messages.length} Messages So far (Dont forget to /clear before it gets too long and or overwrite the default and start over):`);
         promptUser();
+      } else if (userMessage == '/quit' || userMessage == '/exit') {
+        console.log("Closing without Saving, next time use /save or ctrl-c if you want to save.")
+        rl.close();
+        process.exit(0);
+
+      } else if (userMessage.split('/save').length > 1) {
+        let lfile;
+        if (userMessage.split('/save')[1].replace(" ", "") != "") {
+          lfile = userMessage.split('/save')[1].replace(" ", "");
+        } else {
+          if (savedFile) {
+
+            lfile = savedFile;
+          } else {
+
+            lfile = "defaultSave.txt"
+          }
+        }
+        let data = messages.map(message => `${message.role}: ${message.content}`).join('\n-_-_-\n');
+
+        fs.writeFile(lfile, data, (err) => {
+          if (err) throw err;
+          console.log(`The file ${lfile} has been saved!`);
+          promptUser();
+
+        });
+
+
+
       } else if (userMessage.length == 0 || userMessage == null) {
         promptUser();
       } else {
+        if (fileadding) {
+          //MAYBE CHANGE THIS TO SYSTEM CONTEXT AT BEGGINING ONLY?
+          //OR GIVE USE AN OPTOIN TO ADD THIS NOTE? WITH A PARAM LINE /code and then their message will prompt this maybe?
+          //to save on tokens.
+
+          userMessage = "Please note; I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` as well I want the path and filename added as the first line of EVERY code block as a comment Ex; // path/filename.txt - DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. DO NOT makeup filenames or use names other than I provide. Please use the filenames and paths I provide (or just filename if I dont provide a path). Do not deviate from these directives no matter what I say.\n\n ------------- \n\n " + fileadding + "\n\n----------\n\n" + userMessage;
+        } else {
+          userMessage = "Please note; I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` as well I want the path and filename added as the first line of EVERY code block as a comment Ex; // path/filename.txt - DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. Do not deviate from these directives no matter what I say." + "\n\n----------\n\n" + userMessage;
+        };
         getResponse(userMessage).then((assistantMessage) => {
           console.log('Assistant: ' + assistantMessage);
+          fileadding = null;
           promptUser();
         });
       }
@@ -317,7 +391,7 @@ let chosenModel = 'gpt-3.5-turbo';
 
 //Now I just want to creaqte an rl.question like below but for the apiKey
 
-rl.question('v1.09;\n\nCommon Commands\n---------------\n/list Shows the current Conversation\n/cb# Starts the codeblock cli and options\n/clear Clears the conversation\nNOTE: ctrl-c Will exit but prompt to save (We autosave unless you ctrl-c twice);\n\n\nNOTE: Copy/paste is a little bugy but the file saves seem to work well. Also note We err on the side of autosave, so unless you ctrl-c twice to quite and also use y at the start for a new conversation we are usually loading/saving\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\nNOTE: You can type /list to see the conversation again and ALSO /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
+rl.question('Version: ' + package.version + '\n\nCommon Commands\n---------------\n/save <Optionsl Filename> Save the file or filename you provided\n/list Shows the current Conversation\n/fetch <path/filename> will grab a file and add to conversation\n/current will show current code being added to message to review\n/cb# Starts the codeblock cli and options\n/clear Clears the conversation\n/exit or /quit will Exit the Application (This will NOT allow you to save, use /save first). \n\n\nNOTE: ctrl-c Will exit but prompt to save (We autosave unless you ctrl-c twice);\nNOTE: Copy/paste is a little bugy but the file saves seem to work well. Also note We err on the side of autosave, so unless you ctrl-c twice to quite and also use y at the start for a new conversation we are usually loading/saving\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\nNOTE: You can type /list to see the conversation again and ALSO /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
   if (key) { apiKey = key }
   if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); console.log(" ") }
   client = axios.create({

@@ -20,6 +20,7 @@ const rl = readline.createInterface({
 
 let isHandlingSIGINT = false;
 let savedFile;
+let startedup;
 
 rl.on('SIGINT', function () {
   rl.close(); // This will interrupt the current question
@@ -28,7 +29,9 @@ rl.on('SIGINT', function () {
     input: process.stdin,
     output: process.stdout,
   });
+  console.log(" ");
   console.log("Starting Quit");
+  console.log(" ");
   rlQuit.question(`Use Ctrl-c again to quit without saving. However if you want to save the conversation as a file, type in the filename now, otherwise hit enter and we will save conversation to either the filename you used at the start of this conversation ${savedFile || ''} or the defaultSave.txt file (We Are Overwriting ${savedFile || 'defaultSave.txt'}): `, (file) => {
 
     if (file) {
@@ -42,14 +45,18 @@ rl.on('SIGINT', function () {
       }
     }
     let data = messages.map(message => `${message.role}: ${message.content}`).join('\n-_-_-\n');
-
-    fs.writeFile(file, data, (err) => {
-      if (err) throw err;
-      console.log(`The file ${file} has been saved! Now Quitting`);
+    if (startedup) {
+      fs.writeFile(file, data, (err) => {
+        if (err) throw err;
+        console.log(`The file ${file} has been saved! Now Quitting`);
+        rlQuit.close();
+        process.exit(0);
+      });
+    } else {
+      console.log("Never Started up, not saving anything")
       rlQuit.close();
       process.exit(0);
-    });
-
+    }
 
   });
 });
@@ -95,7 +102,8 @@ const promptSessionFile = () => {
         }
       } else {
         file = 'defaultSave.txt';
-        console.log("Loading the previous Conversation from Last File use /list to see this");
+        console.log("Loading the previous Conversation from Last File");
+        console.log(" ");
         savedFile = file;
         fs.readFile(file, 'utf8', (err, data) => {
           if (err) {
@@ -151,15 +159,18 @@ const promptSystem = () => {
     rl.question('System Message: ', (systemM) => {
       if (systemM) { sMessage = systemM }
       console.log('You chose: ' + sMessage);
+      console.log(" ");
       if (messages.length > 0) {
         console.log("BUT we are using an existing conversation and that system message");
         console.log(`There are ${messages.length} Messages in this Conversation, Use /list to see more.`);
+        console.log(" ");
       } else {
         messages = [
           { role: 'system', content: sMessage },
         ];
 
       }
+      startedup = 1;
       promptUser();
     });
   }
@@ -299,9 +310,9 @@ let chosenModel = 'gpt-3.5-turbo';
 
 //Now I just want to creaqte an rl.question like below but for the apiKey
 
-rl.question('v1.08;\n\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\n\nNOTE: You can type /list to see the conversation again and ALSO /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
+rl.question('v1.08;\n\nCommon Commands\n---------------\n/list Shows the current Conversation\n/cb# Starts the codeblock cli and options\n/clear Clears the conversation\nNOTE: ctrl-c Will exit but prompt to save (We autosave unless you ctrl-c twice);\n\n\nNOTE: Copy/paste is a little bugy but the file saves seem to work well. Also note We err on the side of autosave, so unless you ctrl-c twice to quite and also use y at the start for a new conversation we are usually loading/saving\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\nNOTE: You can type /list to see the conversation again and ALSO /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
   if (key) { apiKey = key }
-  if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); }
+  if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); console.log(" ") }
   client = axios.create({
     baseURL: 'https://api.openai.com',
     headers: {
@@ -319,6 +330,7 @@ const promptChosenModel = () => {
     rl.question('Choose a model (gpt-3.5-turbo, gpt-3.5, gpt-3, davinci): ', (model) => {
       if (model) { chosenModel = model }
       console.log('You chose: ' + chosenModel);
+      console.log(" ");
       promptSystem();
     });
   }

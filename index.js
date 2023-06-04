@@ -11,6 +11,11 @@ const clipboardy = require('clipboardy');
 //now maybe this all works and docker does work?
 //Now maybe lets add some code block extracting or something like that? Lets try to make this MORE interactive with /code or someting and we check the input from user and do stuff etc etc
 
+//perhaps now we can work on some other features like /quit and /exit and maybe inerpreting or test from paths and EVEN prepending the words --"Always include filenames and folers paths in comments at top of EVERY file example--" or someting like that and then you can count on that and show filenames and paths and create those as needed from the resposnes etc etc
+//ALSO have it so we can grab and create files and folders from ALL code block exmaples in a given response like /cball etc etc
+//perhaps something that outputs a jira task or project or a few api requests to do so from your given codeblocks? etc etc
+// a /save would be a good feature just to do a default save midway just add a shared function so you dont repeat code and call it from suerpromt /save call etc etc let them choose file but have a default like before from their chosen at beggining etc etc
+
 
 const rl = readline.createInterface({
   input: process.stdin,

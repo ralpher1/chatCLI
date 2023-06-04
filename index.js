@@ -185,7 +185,18 @@ const promptCodeProcessing = (blocks) => {
 
       } else if (userMessage.split("l").length > 1) {
         console.log("Listing Code Blocks");
-        blocks.map((block, i) => { console.log("Block # " + (i + 1), block.replace(/```/g, '')) });
+        blocks.map((block, i) => {
+          console.log(" ");
+          console.log(" ");
+          console.log("Block # " + (i + 1));
+          console.log("-------------------");
+          console.log(block.replace(/```/g, ''));
+          console.log("---------------------");
+          console.log(`******END BLOCK #${i + 1} **`);
+          console.log("---------------------");
+          console.log(" ");
+          console.log(" ");
+        });
         promptCodeProcessing(blocks);;
 
       } else {
@@ -222,11 +233,22 @@ const promptUser = () => {
 
       } else if (userMessage == '/list') {
         console.log("Listing Conversation Below");
-        messages.map((mes) => {
+        messages.map((mes, ii) => {
+          console.log(" ");
+          console.log(mes.role + ": ");
+          console.log("----------");
+          console.log(" ");
           console.log(mes.content);
-          console.log("--------")
+          console.log("---------------------");
+          console.log(`****END MESSAGE #${ii + 1} **`)
+          console.log("---------------------");
+          console.log(" ");
+          console.log(" ");
 
         });
+        console.log(`${messages.length} Messages So far (Dont forget to /clear before it gets too long and or overwrite the default and start over):`);
+        promptUser();
+      } else if (userMessage.length == 0 || userMessage == null) {
         promptUser();
       } else {
         getResponse(userMessage).then((assistantMessage) => {

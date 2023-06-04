@@ -20,13 +20,23 @@ function processString(string) {
   function processNextCodeBlock(blocks) {
     if (currentIndex < blocks.length) {
       const codeBlock = blocks[currentIndex].replace(/```/g, '');
+      console.log(" ");
+      console.log(" ");
       console.log(`# ${currentIndex + 1} Code block found:`);
+      console.log("---------------------");
+      console.log(" ");
       console.log(codeBlock);
+      console.log("---------------------");
+      console.log(`******END BLOCK #${(currentIndex + 1)} **`);
+      console.log("---------------------");
+      console.log(" ");
+      console.log(" ");
       currentIndex++;
       processNextCodeBlock(blocks);
     } else {
       console.log('No (more) code blocks found.');
       //WHY would i do this and use a module level currentindex?
+      console.log(`${(currentIndex)} Code Blocks Found`)
       currentIndex = 0;
     }
   }

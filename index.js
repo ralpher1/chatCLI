@@ -73,9 +73,29 @@ const parseFileContent = (content) => {
 
 const promptSessionFile = () => {
   if (!isHandlingSIGINT) {
-    rl.question('Do you want to use an existing defaultSave.txt file or another for this session or new? Hit enter for a new session, use "y" for the defaultSave file or enter a new filename and if that file doesnt exist we will let you know and you should create it on exit/save: ', (file) => {
+    rl.question('If you want to start a new session say "y" Otherwise we use the defaultSave.txt file, or you can enter a new filename now and if that file doesnt exist we will let you know and you should create it on exit/save: ', (file) => {
       if (file) {
-        if (file == 'y' || file == 'Y') { console.log("Using the default Save File"); file = 'defaultSave.txt' }
+        if (file == 'y' || file == 'Y') { console.log("Using the default Save File if you save; but starting over"); file = 'defaultSave.txt'; promptChosenModel(); }
+        else {
+
+
+
+          savedFile = file;
+          fs.readFile(file, 'utf8', (err, data) => {
+            if (err) {
+              console.error(`Failed to read file ${file}:`, err);
+              console.log("We wont use a save file contents and we will start a new conversation; but we do Suggest creating this file on exit (We will create it on exit for you)")
+              // If there was an error reading the file, just continue to the next prompt
+              promptChosenModel();
+            } else {
+              messages = parseFileContent(data);
+              promptChosenModel();
+            }
+          });
+        }
+      } else {
+        file = 'defaultSave.txt';
+        console.log("Loading the previous Conversation from Last File use /list to see this");
         savedFile = file;
         fs.readFile(file, 'utf8', (err, data) => {
           if (err) {
@@ -85,11 +105,13 @@ const promptSessionFile = () => {
             promptChosenModel();
           } else {
             messages = parseFileContent(data);
+
             promptChosenModel();
           }
         });
-      } else {
-        // If the user did not provide a file, just continue to the next prompt
+        //gonna be ugly repeated code for now
+        //will make functions later
+
         promptChosenModel();
       }
     });
@@ -130,7 +152,8 @@ const promptSystem = () => {
       if (systemM) { sMessage = systemM }
       console.log('You chose: ' + sMessage);
       if (messages.length > 0) {
-        console.log("BUT we are using an existing conversation and that system message")
+        console.log("BUT we are using an existing conversation and that system message");
+        console.log(`There are ${messages.length} Messages in this Conversation, Use /list to see more.`);
       } else {
         messages = [
           { role: 'system', content: sMessage },

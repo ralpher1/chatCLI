@@ -3,7 +3,9 @@ require('dotenv').config();
 const axios = require('axios');
 const readline = require('readline');
 const fs = require('fs');
-
+const ps = require('./processString');
+const clipboardy = require('clipboardy');
+//const clip = require('./clip')
 //Now I want to fix this so rl.on and sigint and sigterm all work within a docker container !! 
 //AND add some verbiage in FIRST prompt with instructions about what ctrl-c does etc etc and an intro etc etc
 //now maybe this all works and docker does work?
@@ -17,7 +19,7 @@ const rl = readline.createInterface({
 
 
 let isHandlingSIGINT = false;
-
+let savedFile;
 
 rl.on('SIGINT', function () {
   rl.close(); // This will interrupt the current question
@@ -27,21 +29,28 @@ rl.on('SIGINT', function () {
     output: process.stdout,
   });
   console.log("Starting Quit");
-  rlQuit.question('If you want to save the conversation as a file, type in the filename now otherwise hit enter: ', (file) => {
-    if (file) {
-      let data = messages.map(message => `${message.role}: ${message.content}`).join('\n-_-_-\n');
+  rlQuit.question(`Use Ctrl-c again to quit without saving. However if you want to save the conversation as a file, type in the filename now, otherwise hit enter and we will save conversation to either the filename you used at the start of this conversation ${savedFile || ''} or the defaultSave.txt file (We Are Overwriting ${savedFile || 'defaultSave.txt'}): `, (file) => {
 
-      fs.writeFile(file, data, (err) => {
-        if (err) throw err;
-        console.log('The file has been saved!');
-        rlQuit.close();
-        process.exit(0);
-      });
+    if (file) {
     } else {
-      console.log("Quitting");
+      if (savedFile) {
+
+        file = savedFile;
+      } else {
+
+        file = "defaultSave.txt"
+      }
+    }
+    let data = messages.map(message => `${message.role}: ${message.content}`).join('\n-_-_-\n');
+
+    fs.writeFile(file, data, (err) => {
+      if (err) throw err;
+      console.log(`The file ${file} has been saved! Now Quitting`);
       rlQuit.close();
       process.exit(0);
-    }
+    });
+
+
   });
 });
 
@@ -64,11 +73,14 @@ const parseFileContent = (content) => {
 
 const promptSessionFile = () => {
   if (!isHandlingSIGINT) {
-    rl.question('Do you want to use an existing file/session? If yes, enter the filename: ', (file) => {
+    rl.question('Do you want to use an existing defaultSave.txt file or another for this session or new? Hit enter for a new session, use "y" for the defaultSave file or enter a new filename and if that file doesnt exist we will let you know and you should create it on exit/save: ', (file) => {
       if (file) {
+        if (file == 'y' || file == 'Y') { console.log("Using the default Save File"); file = 'defaultSave.txt' }
+        savedFile = file;
         fs.readFile(file, 'utf8', (err, data) => {
           if (err) {
             console.error(`Failed to read file ${file}:`, err);
+            console.log("We wont use a save file contents and we will start a new conversation; but we do Suggest creating this file on exit (We will create it on exit for you)")
             // If there was an error reading the file, just continue to the next prompt
             promptChosenModel();
           } else {
@@ -84,6 +96,29 @@ const promptSessionFile = () => {
   }
 };
 
+
+const promptCodeSave = (data, blocks) => {
+  //SO SLOPPY PASSING BLOCKS ARTOUND LIKE THIS GOTTA BE BETTER WAY TO PERSIST WRAP ETC ETC
+  if (!isHandlingSIGINT) {
+    rl.question('Give a filename for the Code Block: ', (file) => {
+      if (file) {
+
+        fs.writeFile(file, data, (err) => {
+          if (err) throw err;
+          console.log(`The file ${file} has been saved! You can continue `);
+          promptCodeProcessing(blocks);
+        });
+
+
+
+      } else {
+        console.log("No filename given, not saving.");
+        // If the user did not provide a file, just continue to the next prompt
+        promptCodeProcessing(blocks);
+      }
+    });
+  }
+};
 
 
 
@@ -107,13 +142,98 @@ const promptSystem = () => {
   }
 };
 
+//I want to create a promptCodeProcessing function that is simlar to prompt user but it will handle some other code functions for block parsing and saving
+
+const promptCodeProcessing = (blocks) => {
+  if (!isHandlingSIGINT) {
+    //console.log(messages[messages.length - 1].content);
+
+
+    rl.question('Code Blocks (Use c# or f# or l or x): ', (userMessage) => {
+      let connum;
+      let con;
+
+      if (userMessage.split("c").length > 1) {
+        try {
+          //should make a function for this since repeating and just send some params etc etc
+          connum = userMessage.split("c")[1];
+          if (blocks[connum - 1]) { con = blocks[connum - 1].replace(/```/g, ''); clipboardy.writeSync(con); console.log(`We copied block # ${connum - 1} to your clipboard`); }
+
+          //clip(con);
+
+        }
+        catch (e) {
+          console.log(e, " We may not be able to copy/paste on all systems just copy and paste by hands please. Something went wrong; Try again");
+        }
+        promptCodeProcessing(blocks);
+      } else if (userMessage.split("f").length > 1) {
+        try {
+          connum = userMessage.split("f")[1];
+          if (blocks[connum - 1]) { con = blocks[connum - 1].replace(/```/g, ''); promptCodeSave(con, blocks); }
+
+
+        }
+        catch (e) {
+          console.log(e, " Something went wrong; Try again");
+        }
+
+
+        promptCodeProcessing(blocks);
+      } else if (userMessage.split("x").length > 1) {
+        console.log("Chose to exit going back to conversation");
+        promptUser();
+
+      } else if (userMessage.split("l").length > 1) {
+        console.log("Listing Code Blocks");
+        blocks.map((block, i) => { console.log("Block # " + (i + 1), block.replace(/```/g, '')) });
+        promptCodeProcessing(blocks);;
+
+      } else {
+        console.log("Chose a bad option; Going back to conversation");
+        promptUser();
+
+      }
+    });
+  }
+};
+
+
 const promptUser = () => {
   if (!isHandlingSIGINT) {
     rl.question('You: ', (userMessage) => {
-      getResponse(userMessage).then((assistantMessage) => {
-        console.log('Assistant: ' + assistantMessage);
+      if (userMessage == '/clear') {
+        console.log("CLEARING CONVERSATION");
+        messages = [];
+        promptSystem();
+      } else if (userMessage.split('/cb').length > 1) {
+        try {
+          let chosennum = userMessage.split("/cb")[1];
+          if (!chosennum) { chosennum = 1 }
+          let blocks = ps(messages[messages.length - chosennum].content);
+
+          console.log('Code Blocks - use (c)opy or (f)ile and the number of the block to move to next step ex;c1 (You can use x to go back to user prompts and continue conversation):');
+          promptCodeProcessing(blocks);
+
+        } catch (e) {
+          console.log("Didnt work try again");
+          promptUser();
+        }
+
+
+      } else if (userMessage == '/list') {
+        console.log("Listing Conversation Below");
+        messages.map((mes) => {
+          console.log(mes.content);
+          console.log("--------")
+
+        });
         promptUser();
-      });
+      } else {
+        getResponse(userMessage).then((assistantMessage) => {
+          console.log('Assistant: ' + assistantMessage);
+          promptUser();
+        });
+      }
     });
   }
 };
@@ -134,7 +254,7 @@ let chosenModel = 'gpt-3.5-turbo';
 
 //Now I just want to creaqte an rl.question like below but for the apiKey
 
-rl.question('v1.08;\n\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\n\nNOTE:You can type /cb to grab a codeblock from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
+rl.question('v1.08;\n\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\n\nNOTE: You can type /list to see the conversation again and ALSO /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
   if (key) { apiKey = key }
   if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); }
   client = axios.create({

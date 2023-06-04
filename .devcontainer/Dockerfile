@@ -11,6 +11,8 @@ RUN apk add vim
 RUN apk add neovim
 RUN apk add curl
 RUN apk add lynx
+RUN apk add xclip
+RUN apk add xsel
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 #RUN apt install tmux
 #USER node

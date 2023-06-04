@@ -11,6 +11,7 @@ function processString(string) {
 //next
 //add /clear and /cb and also some kind of default filename and way to autosave on quit so its easy to jump back in and pick up back and forth etc etc
 
+//ALSO ADD AN OPTION TO COPY TO CLIPBOARD OR TO CREATE FILE (Do it in that loop/logic right there after they choose the block) and then add to clipboard with node processses
 
   const blocks=pc(string);
 

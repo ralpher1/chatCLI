@@ -1,0 +1,25 @@
+system: You are a Helpful Assistant::
+-_-_-
+user: tesgin213 give me someting here::
+-_-_-
+assistant: I'm sorry, I do not understand what you mean by "tesgin213 give me something here." Can you please provide more context or rephrase your request?::
+-_-_-
+user: what was my first mewssage there?:
+-_-_-
+assistant: I don't have access to your previous messages without additional information. Can you clarify which platform or chat service you are referring to?:
+-_-_-
+user: what did I ask in the begginign of this concversation?:
+-_-_-
+assistant: You started this conversation by saying "tesgin213 give me someting here.":
+-_-_-
+user: ok what was the 2nd question I just asked then?
+-_-_-
+assistant: Your second question was "what was my first message there?" in reference to our previous conversation.
+-_-_-
+user: ok what was my very fierst agian?
+-_-_-
+assistant: I'm sorry, but as an AI language model, I do not have access to your previous conversation logs. Could you please provide additional context or information so I can better assist you?
+-_-_-
+user: no my girst message here
+-_-_-
+assistant: Your first message in this conversation was "tesgin213 give me someting here".

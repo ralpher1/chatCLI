@@ -29,7 +29,7 @@ rl.on('SIGINT', function () {
   console.log("Starting Quit");
   rlQuit.question('If you want to save the conversation as a file, type in the filename now otherwise hit enter: ', (file) => {
     if (file) {
-      let data = messages.map(message => `${message.role}: ${message.content}`).join('\n---\n');
+      let data = messages.map(message => `${message.role}: ${message.content}`).join('\n-_-_-\n');
 
       fs.writeFile(file, data, (err) => {
         if (err) throw err;
@@ -47,7 +47,7 @@ rl.on('SIGINT', function () {
 
 
 const parseFileContent = (content) => {
-  const messageStrings = content.split('\n---\n');
+  const messageStrings = content.split('\n-_-_-\n');
   return messageStrings.map(messageString => {
     let [role, ...contentParts] = messageString.split(/:(.+)/);
     role = role.trim().toLowerCase();
@@ -134,7 +134,7 @@ let chosenModel = 'gpt-3.5-turbo';
 
 //Now I just want to creaqte an rl.question like below but for the apiKey
 
-rl.question('v1.08;\n\nNOTE: You can type /cb to grab a codeblock from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
+rl.question('v1.08;\n\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\n\nNOTE:You can type /cb to grab a codeblock from you last response received; and save to file, and you can also use ctrl-c to exit and save current conversation to a file\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
   if (key) { apiKey = key }
   if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); }
   client = axios.create({

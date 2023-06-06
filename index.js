@@ -55,12 +55,14 @@ if (process.argv[2] == '--help') {
   if (process.argv[2]) {
     
     let filename=process.argv[2];
-    originalFilename=filename;
+
     //now pull out using spread operator ALL the rest of the argv array into a string below called messages
     let messages = process.argv.slice(3).join(' ');
     //now lets check if the filename exists and if so lets set goingAuto=1;
     let actualFile = path.join(__dirname, filename);
     console.log("Looks like we're adding a file "+filename+"; And you are asking the Following Question(s):\n" + messages);
+    let rfile=filename.replace(" ","");
+    originalFilename=rfile;
 
     if (fs.existsSync(actualFile)) {
       console.log("Looks like that file exists, we'll add it to the conversation now.");
@@ -71,13 +73,19 @@ if (process.argv[2] == '--help') {
       }else{
         console.log("Looks like you didnt provide a message, we'll continue to the CLI program now AND add your file to the conversation but we wont send unless you prompt a question to send etc etc.");
       }
-      goingAuto = 1;
+     
     }else{
       if (process.argv[3]){
-      console.log("Looks like that file doesnt exist, please try again");
-      process.exit(0);
+      
+	      if (messages){
+	      console.log("Looks like that file doesnt exist, please try again, but well try to actually read it incase its a permissions issue, if it fails again well exit the program");
+	      }else{
+	       console.log("Looks like that file doesnt exist, please try again, but well try to actually read it incase its a permissions issue, if it fails again well exit the program, we also noticed you didnt give a message, so we will prompt you to (If we can read the file, otherwise well quit)");
+
+	      }
+	      //      process.exit(0);
       }else{
-        console.log("We couldnt find that file, but it also looks like you didnt provide a message, so we'll continue to the CLI program now.");
+        console.log("We couldnt find that file, but it also looks like you didnt provide a message, so we'll continue to the CLI program now, but we will try to read the file again one more time.");
         //process.exit(0);
 
       }
@@ -85,7 +93,7 @@ if (process.argv[2] == '--help') {
 
 
 
-
+goingAuto=1;
 
 
   }
@@ -483,7 +491,7 @@ const promptUser = () => {
           promptUser();
         }
       
-      });
+      }).catch((err)=>{console.log("The file load failed, we are quitting now");process.exit(0)});
 
     }else{
     rl.question('You: ', (userMessage) => {

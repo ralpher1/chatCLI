@@ -79,6 +79,7 @@ if (process.argv[2] == '--help') {
       if (process.argv[3]){
       
 	      if (messages){
+	      autoMessage=messages;	      
 	      console.log("Looks like that file doesnt exist, please try again, but well try to actually read it incase its a permissions issue, if it fails again well exit the program");
 	      }else{
 	       console.log("Looks like that file doesnt exist, please try again, but well try to actually read it incase its a permissions issue, if it fails again well exit the program, we also noticed you didnt give a message, so we will prompt you to (If we can read the file, otherwise well quit)");

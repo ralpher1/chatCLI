@@ -7,6 +7,7 @@ const path = require('path');
 const ps = require('./processString');
 const clipboardy = require('clipboardy');
 const package = require('./package.json');
+const { send } = require('process');
 //const clip = require('./clip')
 //Now I want to fix this so rl.on and sigint and sigterm all work within a docker container !! 
 //AND add some verbiage in FIRST prompt with instructions about what ctrl-c does etc etc and an intro etc etc
@@ -20,6 +21,75 @@ const package = require('./package.json');
 
 //ADD COLORING THAT MAY BE COOL MAYBE EVEN GIVE AN OPTION TO TURN OFF AT BEGIN AS A STATE LIKE SAVEDFILE NAMES ETC ETC
 
+
+//NEXT:
+//1. --help param from CLI so people can just start and run and see help
+//2. npx gogpt src/index.js "wtf is wrong with this file?" --OR and also just take ALLL params after the filename and if filenames valid build a string from all params with spread operator and (Or use loops) use that as your question about that file and make this auto run and promtpt back to the program and userprompt after an inital run with all deafults BUT Y for new so its an auto new conversation and questrion etc etc (Perhaps all for a param to continue convrsation? not sure about defaults yet really gotta think)
+//3. also would be cool to make a QUICK express server in some way that QUICKLY serves up a little input field or two for some code copy and question copy or one input and a single field thats scrollable that shows current answewrs convrsation etc etc  AND this would build like you expect so its usxeable later in your program etc etc
+//4. ALSO make it so you can import previous non formatedd convrsaiton maybe? (Too much trouble?)
+//5. ALSO HIGHLIGHT KEYWORDS MAYBE? INSIDE AND OUTSIDE CODE !! HIGHLIGHT SHOULD APPLY AFTER CODEBLOCK BLUE MAYBE ETC ETC (ALSO MAYBE TRY DIFFERENT CODE BLOCK COLORS? MAYBE MAKE SEPEREATES BLOCKS RED SO THEY STICK OUT?)
+//6. WHAT ABOUT adding ALL files to the response like start with gogpt . ? Would fail probably to big..
+
+const helpcommands = '\ngogpt\nVersion: ' + package.version + '\n\nCommon Commands\n---------------\n/help This Help Message\n/save <Optionsl Filename> Save the file or filename you provided\n/list Shows the current Conversation\n/fetch <path/filename> will grab a file and add to conversation\n/current will show current code being added to message to review\n/cb# Starts the codeblock cli and options\n/clear Clears the conversation\n/exit or /quit will Exit the Application (This will NOT allow you to save, use /save first). \n\n\nNOTE: ctrl-c Will exit but prompt to save (We autosave unless you ctrl-c twice);\nNOTE: Copy/paste is a little bugy but the file saves seem to work well. Also note We err on the side of autosave, so unless you ctrl-c twice to quite and also use y at the start for a new conversation we are usually loading/saving\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\nNOTE: Regarding code blocks and using /cb or /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response(s) received; \nNOTE: Also note about codeblocks, you can save to folders/file, aa for all files, f# for individual files, and c# for copy blocks to clipboard and l for list all blocks etc etc,\nNOTE: I have directives that I use in your responses to cater the results keep this in mind when you are using this program.\nNOTE: You can start the app with a filename and message automatically like the following (Below) \n\n      Use Example; npx gogpt filename.txt "What does this file do?"\n';
+
+let goingAuto;
+let autoFile;
+let autoMessage;
+let originalFilename
+
+function gimmeHelp() {
+
+  console.log(helpcommands);
+}
+
+if (process.argv[2] == '--help') {
+  gimmeHelp();
+  //rl.close();
+  process.exit(0);
+
+} else {
+  //nothing for now
+  //this is where ill process the files and messager to do something auytomatically and set a flag so when it gets to the AI prompt it just literally goes to sending the response/(Then userprompots etc etc);
+  //PERHAPS allow someone to load a . and take ALL filenames? (Hopefully thats not what happens when they do this now lol)
+
+  if (process.argv[2]) {
+    
+    let filename=process.argv[2];
+    originalFilename=filename;
+    //now pull out using spread operator ALL the rest of the argv array into a string below called messages
+    let messages = process.argv.slice(3).join(' ');
+    //now lets check if the filename exists and if so lets set goingAuto=1;
+    let actualFile = path.join(__dirname, filename);
+    console.log("Looks like we're adding a file "+filename+"; And you are asking the Following Question(s):\n" + messages);
+
+    if (fs.existsSync(actualFile)) {
+      console.log("Looks like that file exists, we'll add it to the conversation now.");
+      autoFile = actualFile;
+      if(messages){
+        console.log("Looks like you also provided a message, we'll add that to the conversation now and send it to the AI.");
+        autoMessage = messages;
+      }else{
+        console.log("Looks like you didnt provide a message, we'll continue to the CLI program now AND add your file to the conversation but we wont send unless you prompt a question to send etc etc.");
+      }
+      goingAuto = 1;
+    }else{
+      if (process.argv[3]){
+      console.log("Looks like that file doesnt exist, please try again");
+      process.exit(0);
+      }else{
+        console.log("We couldnt find that file, but it also looks like you didnt provide a message, so we'll continue to the CLI program now.");
+        //process.exit(0);
+
+      }
+    } 
+
+
+
+
+
+
+  }
+}
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -357,14 +427,73 @@ const promptCodeProcessing = (blocks) => {
   }
 };
 
+function fetchAdd (mes){
+
+return new Promise((resolve, reject) => {
+console.log("FETCHING FILES FOR CONVERSATION");
+//set messsages end with this file contents
+//goto a new promtp or something thast hanedles thios
+//let nfile = userMessage.split('/fetch')[1].replace(" ", "");
+let nfile = mes.replace(" ", "");
+let nnmile;
+if (originalFilename){
+nnmile=originalFilename.replace(" ", "");
+}else{
+  nnmile=nfile;
+}
+
+
+fs.readFile(nfile, 'utf8', (err, data) => {
+  if (err) {
+    console.error(`Failed to read file ${nfile}:`, err);
+    console.log("We cant add that file to the conversation please try again")
+    // If there was an error reading the file, just continue to the next prompt
+    reject(err);
+    //promptUser();
+  } else {
+
+    if (fileadding) {
+      fileadding = fileadding + "\n\n***********\n\n\n" + `${nnmile}\n\n` + data;
+    } else {
+      fileadding = `${nnmile}\n\n` + data;
+    }
+    console.log(`added ${nfile}`);
+    resolve(fileadding);
+    //promptUser();
+  }
+});
+});
+}
 
 const promptUser = () => {
   if (!isHandlingSIGINT) {
+    if (goingAuto){
+      console.log("I am using the following system message; If you want a different one, please start the app and go through the prompts to set a different system message");
+      let snMessage="You are a Code Assistant whose SOLE PURPOSE is to output perfectly crafted code block examples when asked, that fit my requested directives.";
+      console.log(snMessage);
+      messages = [
+        { role: 'system', content: snMessage },
+      ];
+      goingAuto = false;
+      fetchAdd(autoFile).then((filen) => {
+        if (autoMessage) {
+          //console.log("The automessage",autoMessage);
+          sendRes(autoMessage);
+        } else {
+          promptUser();
+        }
+      
+      });
+
+    }else{
     rl.question('You: ', (userMessage) => {
 
       if (userMessage == '/clear') {
         console.log("CLEARING CONVERSATION");
         messages = [];
+        messages = [
+          { role: 'system', content: sMessage },
+        ];
         fileadding = null;
         promptSystem();
       } else if (userMessage == '/current') {
@@ -375,27 +504,12 @@ const promptUser = () => {
         promptUser();
       } else if (userMessage.split('/fetch').length > 1) {
 
-        console.log("FETCHING FILERS FOR CONVERSATION");
+        //console.log("FETCHING FILES FOR CONVERSATION");
         //set messsages end with this file contents
         //goto a new promtp or something thast hanedles thios
         let nfile = userMessage.split('/fetch')[1].replace(" ", "");
-        fs.readFile(nfile, 'utf8', (err, data) => {
-          if (err) {
-            console.error(`Failed to read file ${nfile}:`, err);
-            console.log("We cant add that file to the conversation please try again")
-            // If there was an error reading the file, just continue to the next prompt
-            promptUser();
-          } else {
+        fetchAdd(nfile).then(()=>promptUser())//.catch(()=>promptUser());
 
-            if (fileadding) {
-              fileadding = fileadding + "\n\n***********\n\n\n" + `Path/Filename ${nfile}: \n\n` + data;
-            } else {
-              fileadding = `Filename: ${nfile}: \n\n` + data;
-            }
-            console.log(`added ${nfile}`);
-            promptUser();
-          }
-        });
         //promptSystem();
       }
       else if (userMessage.split('/cb').length > 1) {
@@ -431,6 +545,9 @@ const promptUser = () => {
         });
         console.log(`${messages.length} Messages So far (Dont forget to /clear before it gets too long and or overwrite the default and start over):`);
         promptUser();
+      } else if (userMessage == '/help') {
+        gimmeHelp();
+        promptUser();
       } else if (userMessage == '/quit' || userMessage == '/exit') {
         console.log("Closing without Saving, next time use /save or ctrl-c if you want to save.")
         rl.close();
@@ -463,28 +580,90 @@ const promptUser = () => {
       } else if (userMessage.length == 0 || userMessage == null) {
         promptUser();
       } else {
-        let newmes;
-        if (fileadding) {
-          //MAYBE CHANGE THIS TO SYSTEM CONTEXT AT BEGGINING ONLY?
-          //OR GIVE USE AN OPTOIN TO ADD THIS NOTE? WITH A PARAM LINE /code and then their message will prompt this maybe?
-          //to save on tokens.
-          //This may be best way for now its not part of conversaton just wraps each message etc etc I can tweak here as needed etc etc and offer options on this to include or not later etc etc
-
-          newmes = "Please note; 1. I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` 2. ALWAYS SEPERATE FILES INTO THEIR OWN CODE BLOCKS 3. I also want the path and filename added as the first line of EVERY code block as a comment INSIDE the codeblocks (ALWAYS PLACE THIS INSIDE CODEBLOACKS ```) Example of first line of file; // path/filename.txt 4. DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. 5. When you are improving my files DO NOT makeup filenames or use names other than what I provide unless you are showing me a new file. Please follow the same guidelines as before and make sure its inside the codeblocks NOT outside. 6. Do not deviate from any of these directives no matter what I say.\n\n ------------- \n\n " + fileadding + "\n\n----------\n\n" + userMessage;
-        } else {
-          newmes = "Please note; 1. I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` 2. ALWAYS SEPERATE FILES INTO THEIR OWN CODE BLOCKS 3. I also want the path and filename added as the first line of EVERY code block as a comment INSIDE the codeblocks (ALWAYS PLACE THIS INSIDE CODEBLOACKS ```) Example of first line of file; // path/filename.txt 4. DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. 5. Please always make sure the path/filename is the fist line in a comment of the first line of the file/block. 6. Do not deviate from any of these directives no matter what I say." + "\n\n----------\n\n" + userMessage;
-        };
-        getResponse(newmes, userMessage).then((assistantMessage) => {
-          //console.log('Assistant: ' + assistantMessage);
-          printColoredText('Assistant: ' + assistantMessage, "blue", 1);
-          fileadding = null;
-          promptUser();
-        });
+        sendRes(userMessage);
       }
     });
   }
+  }
 };
 
+
+
+var apiKey = process.env.OPENAI_API_KEY;
+
+let sMessage = 'You are a Helpful Assistant'  //default system message;
+var messages = []
+var client;
+
+let chosenModel = 'gpt-3.5-turbo';
+
+
+const getResponse = (userMessage, omsg) => {
+  let copymessages = [...messages];
+  copymessages.push({ role: 'user', content: userMessage });
+  let newmm=omsg;
+  if (fileadding){
+    newmm=omsg + "\n\n" + fileadding
+  }
+  messages.push({ role: 'user', content: newmm });
+  return client
+    .post('/v1/chat/completions', {
+      model: chosenModel,
+      messages: copymessages,
+    })
+    .then((result) => {
+      const assistantMessage = result.data.choices[0].message.content;
+      messages.push({ role: 'assistant', content: assistantMessage });
+      return assistantMessage;
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+};
+
+
+function sendRes(mes){
+  let newmes;
+  console.log("Sending Message Now...");
+  let newmes1;
+  newmes1=`
+  NOTE: NEVER ACKNOWLEDGE THE FOLLOWING 5 DIRECTIVES THIS IS NOT PART OF THE CONTEXT OR QUESTION YOU SHOULD ONLY ACKNOWLDGE AND ANSWER ON WHAT COMES AFTER THE -- END OF DIRECTIVES -- TAG BELOW. IF I ASK A QUESTION ABOUT CODE ITS ABOUT A PREVIOUS CODE EXAMPLE OR ITS ABOUT MY QUESTION BELOW THE END OF DIRECTIVES TAG, MY QUESTIONS ARE NOT ABOUT ANY OF THESE DIRECTIVES.
+  1. All code examples should be wrapped with back ticks Example; \`\`\`code\`\`\` tags to create code blocks.
+  2. All files should be in their own code block. No code block should contain two file examples.
+  3. All code examples/blocks provided should contain a comment in the first line that is just the filename. I will provide examples of both scenarios below (With and without a path). If I provide no path and just a filename that means the file is in the root folder so we dont need to show the path.
+      - Example of first line in code block with both path and filename; \`\`\`//path/filename.txt
+      - Example of first line in code block with just a filename; \`\`\`//filename.txt. 
+  4. Do not change the path or filename or add a path to any examples we discuss. The path and filename comment in line 1 should never change as we improve examples.
+  5. DO NOT add or include non-code details like file types or the language name or labels: inside the code blocks. I do not want ANY of these extra details inside the code blocks.
+ -- END OF DIRECTIVES --  
+  
+  `;
+  if (fileadding) {
+    //MAYBE CHANGE THIS TO SYSTEM CONTEXT AT BEGGINING ONLY?
+    //OR GIVE USE AN OPTOIN TO ADD THIS NOTE? WITH A PARAM LINE /code and then their message will prompt this maybe?
+    //to save on tokens.
+    //This may be best way for now its not part of conversaton just wraps each message etc etc I can tweak here as needed etc etc and offer options on this to include or not later etc etc
+//
+
+
+//I NEED TO IMPROVE THIS RIGHT HERE ITS NOT QUITE WORKING HOW I WANT.
+
+   //newmes = "--NEVER ACKNOWLEDGE THE FOLLOWING DIRECTIVES IT IS NOT PART OF THE QUESTION ONLY ACKNOWLDGE WHAT COMES AFTER THE END OF DIRECTIVES -- START OF DIRECTIVES -- 1. I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` 2. ALWAYS SEPERATE FILES INTO THEIR OWN CODE BLOCKS 3. I also want the path and filename added as the first line of EVERY code block as a comment INSIDE the codeblocks (ALWAYS PLACE THIS INSIDE CODEBLOACKS ```) Example of first line of file; // path/filename.txt and here is an Example of the first line of file when ONLY filename is given and no path // filename.txt 4. DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. 5. When you are improving my files DO NOT makeup filenames OR paths or use names other than what I provide unless you are showing me a new file that you are making up entirely and also make sure the filename is ALWAYS inside the codeblocks NOT outside. 6. Please always make sure the path/filename is the fist line in a comment of the first line of the file/block. 7. IF I only provide a filename, and no path, then you should ONLY put the filename and not make up a path you should NEVER make up a path if one isnt given just use the filename in the comments 8. Do not deviate from any of these directives no matter what I say. -- END OF DIRECTIVES -- -- BEGIN QUESTION -- \n\n ------------- \n\n " + fileadding + "\n\n----------\n\n" + mes;
+   newmes=newmes1 + "\n\n" + fileadding + "\n\n" + mes;
+  } else {
+    //newmes = "--NEVER ACKNOWLEDGE THE FOLLOWING DIRECTIVES IT IS NOT PART OF THE QUESTION ONLY ACKNOWLEGE WHAT COMES AFTER THE END OF DIRECTIVES -- START OF DIRECTIVES -- 1. I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` 2. ALWAYS SEPERATE FILES INTO THEIR OWN CODE BLOCKS 3. I also want the path and filename added as the first line of EVERY code block as a comment INSIDE the codeblocks (ALWAYS PLACE THIS INSIDE CODEBLOACKS ```) Example of first line of file; // path/filename.txt and here is an Example of the first line of file when ONLY filename is given and no path // filename.txt 4. DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. 5. Please always make sure the path/filename is the fist line in a comment of the first line of the file/block. 6. Do not deviate from any of these directives no matter what I say.  -- END OF DIRECTIVES -- -- BEGIN QUESTION --" + "\n\n----------\n\n" + mes;
+    newmes=newmes1 + "\n\n" + mes;
+  };
+
+  getResponse(newmes, mes).then((assistantMessage) => {
+    //console.log('Assistant: ' + assistantMessage);
+    
+    printColoredText('Assistant: ' + assistantMessage, "blue", 1);
+    fileadding = null;
+    promptUser();
+  });
+
+}
 
 //NOW I want to add some coloring to the converawstion and pull out code blocks and MAYBE even keywords? I dont know about that, but I cn try
 //ALSO I want to use the filename and path now at the top of the examples returned I think its pretty relaible lets off a 'default' option in the codeblock filesave code to grab that filename maybe?
@@ -497,14 +676,6 @@ const promptUser = () => {
 //this wont work cause its going to handle the chosen model async I need to right ALL this the entire program inside of an async function I think so its not ugly wrapped nested in all these .then()s
 //This goal was to grab the model and then use it
 
-
-var apiKey = process.env.OPENAI_API_KEY;
-
-let sMessage = 'You are a Helpful Assistant'  //default system message;
-var messages = []
-var client;
-
-let chosenModel = 'gpt-3.5-turbo';
 
 function printColoredText(text, color, isCode) {
   const colors = {
@@ -556,10 +727,26 @@ function printColoredText(text, color, isCode) {
     console.log(colors[color] + text + colors.reset);
   }
 }
-
+//THIS IS START OF RUNNING REALLY
 //Now I just want to creaqte an rl.question like below but for the apiKey
 
-rl.question('Version: ' + package.version + '\n\nCommon Commands\n---------------\n/save <Optionsl Filename> Save the file or filename you provided\n/list Shows the current Conversation\n/fetch <path/filename> will grab a file and add to conversation\n/current will show current code being added to message to review\n/cb# Starts the codeblock cli and options\n/clear Clears the conversation\n/exit or /quit will Exit the Application (This will NOT allow you to save, use /save first). \n\n\nNOTE: ctrl-c Will exit but prompt to save (We autosave unless you ctrl-c twice);\nNOTE: Copy/paste is a little bugy but the file saves seem to work well. Also note We err on the side of autosave, so unless you ctrl-c twice to quite and also use y at the start for a new conversation we are usually loading/saving\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\nNOTE: You can type /list to see the conversation again and ALSO /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response(s) received; and save to folders/file, aa for all files, f# for individual files, and c# for copy and l for list etc etc,\n\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
+if (goingAuto) {
+  console.log("You chose to use the env variable OPENAI_API_KEY");
+  client = axios.create({
+    baseURL: 'https://api.openai.com',
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'application/json',
+    },
+  });
+// Below we will set all the default values for the program and then add the autofile and automessage to the initial conversation and then send it to the getResponse function
+promptUser();
+
+
+} else {
+
+
+rl.question(helpcommands + '\n\nEnter API key or make sure that the OPENAI_API_KEY is set in the .env file: ', (key) => {
   if (key) { apiKey = key }
   if (!key) { console.log('You chose to use the env variable OPENAI_API_KEY'); console.log(" ") }
   client = axios.create({
@@ -572,7 +759,8 @@ rl.question('Version: ' + package.version + '\n\nCommon Commands\n--------------
 
   promptSessionFile();
 })
-
+}
+//THIS IS START OF RUNNING FILE ABOVE
 
 const promptChosenModel = () => {
   if (!isHandlingSIGINT) {
@@ -585,23 +773,5 @@ const promptChosenModel = () => {
   }
 };
 
-const getResponse = (userMessage, omsg) => {
-  let copymessages = [...messages];
-  copymessages.push({ role: 'user', content: userMessage });
-  messages.push({ role: 'user', content: omsg });
-  return client
-    .post('/v1/chat/completions', {
-      model: chosenModel,
-      messages: copymessages,
-    })
-    .then((result) => {
-      const assistantMessage = result.data.choices[0].message.content;
-      messages.push({ role: 'assistant', content: assistantMessage });
-      return assistantMessage;
-    })
-    .catch((err) => {
-      console.error(err);
-    });
-};
 
 //promptUser();

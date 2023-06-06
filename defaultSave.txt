@@ -1,8 +1,8 @@
-system: You are a Helpful Assistant:
+system: You are a Helpful Assistant:::
 -_-_-
-user: show me a complex react example with a few files:
+user: show me a complex react example with a few files:::
 -_-_-
-assistant: Sure, here's an example of a complex React application with multiple files::
+assistant: Sure, here's an example of a complex React application with multiple files::::
 
 ```
 // src/App.js
@@ -71,11 +71,11 @@ import React, { useState } from 'react';
 import Product from './Product';
 
 const products = [
-  { id: 1, name: 'Product 1', price: 10 },:
-  { id: 2, name: 'Product 2', price: 15 },:
-  { id: 3, name: 'Product 3', price: 20 },:
-  { id: 4, name: 'Product 4', price: 25 },:
-  { id: 5, name: 'Product 5', price: 30 },:
+  { id: 1, name: 'Product 1', price: 10 },:::
+  { id: 2, name: 'Product 2', price: 15 },:::
+  { id: 3, name: 'Product 3', price: 20 },:::
+  { id: 4, name: 'Product 4', price: 25 },:::
+  { id: 5, name: 'Product 5', price: 30 },:::
 ];
 
 const ProductList = () => {
@@ -98,7 +98,7 @@ const ProductList = () => {
   return (
     <div>
       <ul>{productsComponents}</ul>
-      <p>Cart: {cart.length} items</p>:
+      <p>Cart: {cart.length} items</p>:::
     </div>
   );
 }
@@ -140,12 +140,12 @@ export default Footer;
 
 All of these files are located in the `src/components` directory, and are imported into `App.js` to create the overall application. This example includes components for a header, main content with a product list and cart functionality, and a footer.
 -_-_-
-user: crap I think I broke this file can you fix it and send me the right one?
+user: crap I think I broke this file can you fix it and send me the right one?::
 -_-_-
-assistant: Sure thing! It looks like there are a few issues with the code you provided:
+assistant: Sure thing! It looks like there are a few issues with the code you provided:::
 
 1. `Footer` is not imported, but is used in the `App` component
-2. There is a syntax error: `return` should be `render` for the `App` component
+2. There is a syntax error: `return` should be `render` for the `App` component::
 
 Here is the fixed version of the `src/App.js` file:
 
@@ -237,9 +237,9 @@ export default Footer;
 
 Let me know if you have any questions!
 -_-_-
-user: wait why did you send me everything? And didnt I tell you do NOT put multiple files in the same code block? Send me back jsut the fixed file(s) I need, and in seperate code blocks
+user: wait why did you send me everything? And didnt I tell you do NOT put multiple files in the same code block? Send me back jsut the fixed file(s) I need, and in seperate code blocks::
 -_-_-
-assistant: My apologies for not following your instructions earlier. Here's the fixed `src/App.js` file in a separate code block including the path and filename as the first line of the block as commented:
+assistant: My apologies for not following your instructions earlier. Here's the fixed `src/App.js` file in a separate code block including the path and filename as the first line of the block as commented:::
 
 ```//src/App.js
 import React, { Component } from 'react';
@@ -339,3 +339,101 @@ export default Card;
 ```
 
 Please let me know if there is anything else I may assist you with.
+-_-_-
+user: let me see some better code examples
+-_-_-
+assistant: Apologies for the earlier mistakes. Here are some code examples based on your requirements. Please let me know if you have any questions.
+
+```
+// src/components/Header.js
+import React from 'react';
+
+const Header = () => {
+  return (
+    <header>
+      <h1>My React App</h1>
+      <nav>
+        <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </nav>
+    </header>
+  );
+}
+
+export default Header;
+```
+
+```
+// src/components/Card.js
+import React from 'react';
+
+const Card = ({ title, description, image }) => {
+  return (
+    <div className="card">
+      <img src={image} alt={title} />
+      <h3>{title}</h3>
+      <p>{description}</p>
+      <button>Add to Cart</button>
+    </div>
+  );
+}
+
+export default Card;
+```
+
+```
+// src/components/Main.js
+import React from 'react';
+import Card from './Card';
+
+const Main = () => {
+  return (
+    <main>
+      <h2>Products</h2>
+      <Card />
+    </main>
+  );
+}
+
+export default Main;
+```
+
+```
+// src/components/Footer.js
+import React from 'react';
+
+const Footer = () => {
+  return (
+    <footer>
+      <p>My React App &copy; 2021</p>
+    </footer>
+  );
+}
+
+export default Footer;
+```
+
+```
+// src/App.js
+import React, { Component } from 'react';
+import Header from './components/Header';
+import Main from './components/Main';
+import Footer from './components/Footer';
+
+class App extends Component {
+  render() {
+    return (
+      <div className="App">
+        <Header />
+        <Main />
+        <Footer />
+      </div>
+    );
+  }
+}
+
+export default App;
+```

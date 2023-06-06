@@ -63,10 +63,14 @@ if (process.argv[2] == '--help') {
     console.log("Looks like we're adding a file "+filename+"; And you are asking the Following Question(s):\n" + messages);
     let rfile=filename.replace(" ","");
     originalFilename=rfile;
+    console.log(rfile);
 
     if (fs.existsSync(actualFile)) {
-      console.log("Looks like that file exists, we'll add it to the conversation now.");
-      autoFile = actualFile;
+      console.log("Looks like that file exists, we'll add it to the conversation now. BUT NOTE, this may have found npm/bin files from chats source, we will NOT use those files if so and fail later, or use the local versions:");
+      console.log(actualFile);   
+      console.log("Using filename: ", rfile);
+      //autoFile = actualFile;
+      autoFile=rfile;
       if(messages){
         console.log("Looks like you also provided a message, we'll add that to the conversation now and send it to the AI.");
         autoMessage = messages;

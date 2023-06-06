@@ -59,7 +59,9 @@ if (process.argv[2] == '--help') {
     //now pull out using spread operator ALL the rest of the argv array into a string below called messages
     let messages = process.argv.slice(3).join(' ');
     //now lets check if the filename exists and if so lets set goingAuto=1;
-    let actualFile = path.join(__dirname, filename);
+    //let actualFile = path.join(__dirname, filename);
+    let actualFile = path.join(process.cwd(), filename);
+
     console.log("Looks like we're adding a file "+filename+"; And you are asking the Following Question(s):\n" + messages);
     let rfile=filename.replace(" ","");
     originalFilename=rfile;

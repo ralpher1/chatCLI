@@ -75,6 +75,7 @@ if (process.argv[2] == '--help') {
       }
      
     }else{
+      autoFile=rfile;
       if (process.argv[3]){
       
 	      if (messages){

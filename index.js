@@ -474,6 +474,7 @@ fs.readFile(nfile, 'utf8', (err, data) => {
       fileadding = `${nnmile}\n\n` + data;
     }
     console.log(`added ${nfile}`);
+    originalFilename=null;
     resolve(fileadding);
     //promptUser();
   }

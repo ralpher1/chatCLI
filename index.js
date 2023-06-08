@@ -243,7 +243,7 @@ const promptCodeSave = (data, blocks, auto) => {
   //NOTE:SO SLOPPY PASSING BLOCKS ARTOUND LIKE THIS GOTTA BE BETTER WAY TO PERSIST WRAP ETC ETC
 
   let extractedFileName = extractPathFromComment(data);
-  if (extractedFileName) { console.log("Found path/filename: " + extractPathFromComment); }
+  if (extractedFileName) { console.log("Found path/filename: " + extractedFileName); }
 
   if (auto) {
     if (extractedFileName) {

@@ -30,12 +30,19 @@ const { send } = require('process');
 //5. ALSO HIGHLIGHT KEYWORDS MAYBE? INSIDE AND OUTSIDE CODE !! HIGHLIGHT SHOULD APPLY AFTER CODEBLOCK BLUE MAYBE ETC ETC (ALSO MAYBE TRY DIFFERENT CODE BLOCK COLORS? MAYBE MAKE SEPEREATES BLOCKS RED SO THEY STICK OUT?)
 //6. WHAT ABOUT adding ALL files to the response like start with gogpt . ? Would fail probably to big..
 
-const helpcommands = '\ngogpt\nVersion: ' + package.version + '\n\nCommon Commands\n---------------\n/help This Help Message\n/save <Optionsl Filename> Save the file or filename you provided\n/list Shows the current Conversation\n/fetch <path/filename> will grab a file and add to conversation\n/current will show current code being added to message to review\n/cb# Starts the codeblock cli and options\n/clear Clears the conversation\n/exit or /quit will Exit the Application (This will NOT allow you to save, use /save first). \n\n\nNOTE: ctrl-c Will exit but prompt to save (We autosave unless you ctrl-c twice);\nNOTE: Copy/paste is a little bugy but the file saves seem to work well. Also note We err on the side of autosave, so unless you ctrl-c twice to quite and also use y at the start for a new conversation we are usually loading/saving\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\nNOTE: Regarding code blocks and using /cb or /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response(s) received; \nNOTE: Also note about codeblocks, you can save to folders/file, aa for all files, f# for individual files, and c# for copy blocks to clipboard and l for list all blocks etc etc,\nNOTE: I have directives that I use in your responses to cater the results keep this in mind when you are using this program.\nNOTE: You can start the app with a filename and message automatically like the following (Below) \n\n      Use Example; npx gogpt filename.txt "What does this file do?"\n';
+const helpcommands = '\ngogpt\nVersion: ' + package.version + '\n\nCommon Commands\n---------------\n/help This Help Message\n/save <Optionsl Filename> Save the file or filename you provided\n/list Shows the current Conversation\n/fetch <path/filename> will grab a file and add to conversation\n/current will show current code being added to message to review\n/cb# Starts the codeblock cli and options\n/clear Clears the conversation\n/exit or /quit will Exit the Application (This will NOT allow you to save, use /save first). \n\n\nNOTE: ctrl-c Will exit but prompt to save (We autosave unless you ctrl-c twice);\nNOTE: Copy/paste is a little bugy but the file saves seem to work well. Also note We err on the side of autosave, so unless you ctrl-c twice to quite and also use y at the start for a new conversation we are usually loading/saving\nNOTE: I am using -_-_- to split lines in saved files, do not have that in your code or responses please.\nNOTE: Regarding code blocks and using /cb or /cb# (If you just do /cb it uses last message or a number to check messages counting backwards for code blocks) to grab a codeblocks (Try it) from you last response(s) received; \nNOTE: Also note about codeblocks, you can save to folders/file, aa for all files, f# for individual files, and c# for copy blocks to clipboard and l for list all blocks etc etc,\nNOTE: I have directives that I use in your responses to cater the results keep this in mind when you are using this program.\nNOTE: You can start the app with a filename and message automatically like the following (Below) \n\n      Use Example; npx gogpt filename.txt "What does this file do?"\n\nYou can also use -m to send messages and or system message like npx gpt -m "what to say" "system message here"\n\n';
 
 let goingAuto;
+let usespecial;
 let autoFile;
 let autoMessage;
 let originalFilename
+let isHandlingSIGINT = false;
+let savedFile;
+let startedup;
+let fileadding;
+let systemDefaultMessage;
+let autoQuit;
 
 function gimmeHelp() {
 
@@ -53,6 +60,38 @@ if (process.argv[2] == '--help') {
   //PERHAPS allow someone to load a . and take ALL filenames? (Hopefully thats not what happens when they do this now lol)
 
   if (process.argv[2]) {
+    if (process.argv[2]=="-m") {
+      //this is a message only so we just want to process this message and send it to the AI and then userprompt etc etc
+      let messages1 = process.argv.slice(3).join(' - ');
+      console.log("Looks like we're adding a message only (We will save to singleQuestion.txt if you want to continue/save); And you are asking the Following Question(s):\n" + messages1);
+      goingAuto = 1;
+      autoMessage = process.argv[3];
+      savedFile = "singleQuestion.txt";
+      //check if there is argv[4] and if so use that as the system message
+      if (process.argv[4]) {
+        systemDefaultMessage = process.argv[4];
+      console.log("Using the following system message we see you added as 2nd argument: "+systemDefaultMessage);
+
+    }
+
+      //rl.close();
+      //process.exit(0);
+
+    } else if(process.argv[2]=="-s"){
+      let messages2 = process.argv.slice(3).join(' - ');
+      console.log("Looks like we're adding a message only (And the Quitting, We will save this to SingleQs.txt if you want to continue); And you are asking the Following Question(s):\n" + messages2);
+      goingAuto = 1;
+      autoMessage = process.argv[3];
+      savedFile = "SingleQs.txt";
+      autoQuit=1;
+      //check if there is argv[4] and if so use that as the system message
+      if (process.argv[4]) {
+        systemDefaultMessage = process.argv[4];
+      console.log("Using the following system message we see you added as 2nd argument: "+systemDefaultMessage);
+
+    }
+    } else {
+
     
     let filename=process.argv[2];
 
@@ -68,11 +107,12 @@ if (process.argv[2] == '--help') {
     console.log(rfile);
 
     if (fs.existsSync(actualFile)) {
-      console.log("Looks like that file exists, we'll add it to the conversation now. BUT NOTE, this may have found npm/bin files from chats source, we will NOT use those files if so and fail later, or use the local versions:");
+      console.log("NOTE: Im doing something different with messages using this start; Keep in mind; Looks like that file exists, we'll add it to the conversation now. BUT NOTE, this may have found npm/bin files from chats source, we will NOT use those files if so and fail later, or use the local versions:");
       console.log(actualFile);   
       console.log("Using filename: ", rfile);
       //autoFile = actualFile;
       autoFile=rfile;
+      usespecial=1;
       if(messages){
         console.log("Looks like you also provided a message, we'll add that to the conversation now and send it to the AI.");
         autoMessage = messages;
@@ -81,7 +121,7 @@ if (process.argv[2] == '--help') {
       }
      
     }else{
-      autoFile=rfile;
+      
       if (process.argv[3]){
       
 	      if (messages){
@@ -93,8 +133,10 @@ if (process.argv[2] == '--help') {
 	      }
 	      //      process.exit(0);
       }else{
-        console.log("We couldnt find that file, but it also looks like you didnt provide a message, so we'll continue to the CLI program now, but we will try to read the file again one more time.");
-        //process.exit(0);
+        console.log("We couldnt find that file, but it also looks like you didnt provide a message, Really this will cause issues. So we will exit the program and let you try again ");
+        console.log("If you wanted to use just a message try again with -m as the first argument like");
+        console.log("\nnpx gogpt -m \"Your Message Here\"");
+        process.exit(0);
 
       }
     } 
@@ -102,8 +144,9 @@ if (process.argv[2] == '--help') {
 
 
 goingAuto=1;
+savedFile="singleQuestion.txt";
 
-
+  }
   }
 }
 
@@ -113,10 +156,7 @@ const rl = readline.createInterface({
 });
 
 
-let isHandlingSIGINT = false;
-let savedFile;
-let startedup;
-let fileadding;
+
 
 rl.on('SIGINT', function () {
   rl.close(); // This will interrupt the current question
@@ -483,24 +523,39 @@ fs.readFile(nfile, 'utf8', (err, data) => {
 }
 
 const promptUser = () => {
+  startedup = 1;
   if (!isHandlingSIGINT) {
     if (goingAuto){
       console.log("I am using the following system message; If you want a different one, please start the app and go through the prompts to set a different system message");
-      let snMessage="You are a Code Assistant whose SOLE PURPOSE is to output perfectly crafted code block examples when asked, that fit my requested directives.";
+      let snMessage
+      if (systemDefaultMessage){
+        snMessage=systemDefaultMessage;
+      }else{
+        snMessage="You are a Code Assistant whose SOLE PURPOSE is to output perfectly crafted code block examples when asked, that fit my requested directives. Or if I ask a question about code provide complete and complex/accurate examples and explanations to answer my questions.";
+      }
+      
       console.log(snMessage);
       messages = [
         { role: 'system', content: snMessage },
       ];
       goingAuto = false;
-      fetchAdd(autoFile).then((filen) => {
-        if (autoMessage) {
-          //console.log("The automessage",autoMessage);
-          sendRes(autoMessage);
-        } else {
-          promptUser();
-        }
+      if (autoFile){
+        console.log("I am going to add the following file to the conversation: ",autoFile);
+        fetchAdd(autoFile).then((filen) => {
+          if (autoMessage) {
+            //console.log("The automessage",autoMessage);
+            sendRes(autoMessage);
+          } else {
+            promptUser();
+          }
+        
+        }).catch((err)=>{console.log("The file load failed, we are quitting now");process.exit(0)});
+      } else {
       
-      }).catch((err)=>{console.log("The file load failed, we are quitting now");process.exit(0)});
+     sendRes(autoMessage); 
+      }
+
+     
 
     }else{
     rl.question('You: ', (userMessage) => {
@@ -613,6 +668,12 @@ var messages = []
 var client;
 
 let chosenModel = 'gpt-3.5-turbo';
+if (fs.existsSync('defaultModel.txt')) {
+  //file exists
+  chosenModel = fs.readFileSync('defaultModel.txt', 'utf8');
+  console.log("You chose the model from your default file: " + chosenModel);
+  console.log(" ");
+}
 
 
 const getResponse = (userMessage, omsg) => {
@@ -655,7 +716,7 @@ function sendRes(mes){
  -- END OF DIRECTIVES --  
   
   `;
-  if (fileadding) {
+  if (fileadding && usespecial) {
     //MAYBE CHANGE THIS TO SYSTEM CONTEXT AT BEGGINING ONLY?
     //OR GIVE USE AN OPTOIN TO ADD THIS NOTE? WITH A PARAM LINE /code and then their message will prompt this maybe?
     //to save on tokens.
@@ -667,9 +728,13 @@ function sendRes(mes){
 
    //newmes = "--NEVER ACKNOWLEDGE THE FOLLOWING DIRECTIVES IT IS NOT PART OF THE QUESTION ONLY ACKNOWLDGE WHAT COMES AFTER THE END OF DIRECTIVES -- START OF DIRECTIVES -- 1. I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` 2. ALWAYS SEPERATE FILES INTO THEIR OWN CODE BLOCKS 3. I also want the path and filename added as the first line of EVERY code block as a comment INSIDE the codeblocks (ALWAYS PLACE THIS INSIDE CODEBLOACKS ```) Example of first line of file; // path/filename.txt and here is an Example of the first line of file when ONLY filename is given and no path // filename.txt 4. DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. 5. When you are improving my files DO NOT makeup filenames OR paths or use names other than what I provide unless you are showing me a new file that you are making up entirely and also make sure the filename is ALWAYS inside the codeblocks NOT outside. 6. Please always make sure the path/filename is the fist line in a comment of the first line of the file/block. 7. IF I only provide a filename, and no path, then you should ONLY put the filename and not make up a path you should NEVER make up a path if one isnt given just use the filename in the comments 8. Do not deviate from any of these directives no matter what I say. -- END OF DIRECTIVES -- -- BEGIN QUESTION -- \n\n ------------- \n\n " + fileadding + "\n\n----------\n\n" + mes;
    newmes=newmes1 + "\n\n" + fileadding + "\n\n" + mes;
+   console.log("Using Special Directives...on this response");
   } else {
+    if (fileadding){
+      newmes=fileadding + "\n\n" + mes;
+    }else{newmes=mes;}
     //newmes = "--NEVER ACKNOWLEDGE THE FOLLOWING DIRECTIVES IT IS NOT PART OF THE QUESTION ONLY ACKNOWLEGE WHAT COMES AFTER THE END OF DIRECTIVES -- START OF DIRECTIVES -- 1. I want ALL code examples you provide me to ALWAYS be wrapped in code blocks ``` 2. ALWAYS SEPERATE FILES INTO THEIR OWN CODE BLOCKS 3. I also want the path and filename added as the first line of EVERY code block as a comment INSIDE the codeblocks (ALWAYS PLACE THIS INSIDE CODEBLOACKS ```) Example of first line of file; // path/filename.txt and here is an Example of the first line of file when ONLY filename is given and no path // filename.txt 4. DO NOT append or prepend anyting else like language or filetypes I want only working code examples in the code blocks. 5. Please always make sure the path/filename is the fist line in a comment of the first line of the file/block. 6. Do not deviate from any of these directives no matter what I say.  -- END OF DIRECTIVES -- -- BEGIN QUESTION --" + "\n\n----------\n\n" + mes;
-    newmes=newmes1 + "\n\n" + mes;
+    
   };
 
   getResponse(newmes, mes).then((assistantMessage) => {
@@ -677,7 +742,25 @@ function sendRes(mes){
     
     printColoredText('Assistant: ' + assistantMessage, "blue", 1);
     fileadding = null;
-    promptUser();
+    if (autoQuit){
+      console.log("\n\n--------\nYou only wanted a single message; Quitting now and saving to file singleQs.txt");
+      
+      let data = messages.map(message => `${message.role}: ${message.content}`).join('\n-_-_-\n');
+
+      fs.writeFile(savedFile, data, (err) => {
+        if (err) throw err;
+        console.log(`The file ${savedFile} has been saved!`);
+        process.exit();
+
+      });
+
+
+    //  fs.appendFileSync('singleQs.txt', mes + "\n\n" + assistantMessage + "\n\n");
+    
+    }else{
+      promptUser();
+    }
+    
   });
 
 }
@@ -718,8 +801,11 @@ function printColoredText(text, color, isCode) {
     let inCodeBlock = false;
 
     let currentIndex = 0;
+    if (text){} else {text=""};
 
-    while (currentIndex < text.length) {
+    let len1=text.length;
+
+    while (currentIndex < len1) {
       const startIndex = text.indexOf(codeBlockDelimiter, currentIndex);
       if (startIndex === -1) {
         output += text.substring(currentIndex);
@@ -781,11 +867,30 @@ rl.question(helpcommands + '\n\nEnter API key or make sure that the OPENAI_API_K
 
 const promptChosenModel = () => {
   if (!isHandlingSIGINT) {
-    rl.question('Choose a model (gpt-3.5-turbo, gpt-3.5, gpt-3, davinci): ', (model) => {
-      if (model) { chosenModel = model }
-      console.log('You chose: ' + chosenModel);
-      console.log(" ");
-      promptSystem();
+    rl.question('Choose a model (gpt-3.5-turbo, gpt-3.5-turbo-16k, gpt-3.5-turbo-16k-0613, gpt-4, gpt-3.5, gpt-3, davinci): ', (model) => {
+      if (model) { chosenModel = model 
+      }
+      else{
+        //now check for a file named defaultmodel.txt and if it exists use the contents of that file as chosenModel
+        //if it doesnt exist then use the default model
+
+        if (fs.existsSync('defaultModel.txt')) {
+          //file exists
+          chosenModel = fs.readFileSync('defaultModel.txt', 'utf8');
+      //    console.log("You chose the model: " + chosenModel);
+          console.log(" ");
+        }
+      }
+//now lets save the currently chosen model to the defaultmodel.txt file and overwrite whatever is there.
+fs.writeFile('defaultModel.txt', chosenModel, function (err) {
+  if (err) throw err;
+  console.log('Saved defaultModel.txt !');
+  console.log('You chose: ' + chosenModel);
+  console.log(" ");
+  promptSystem();
+});
+
+    
     });
   }
 };

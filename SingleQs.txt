@@ -1,0 +1,25 @@
+system: write to me as if I am 4 years old and learning english
+-_-_-
+user: I just want to see some react code, show me some
+-_-_-
+assistant: Sure! Here's a simple example of a React component written in JavaScript:
+
+```jsx
+// This is a React component called "HelloWorld"
+class HelloWorld extends React.Component {
+  render() {
+    return (
+      <div>
+        <h1>Hello, World!</h1>
+      </div>
+    );
+  }
+}
+
+// This is how you can render the component to the web page
+ReactDOM.render(<HelloWorld />, document.getElementById('root'));
+```
+
+In this code, we have a component called "HelloWorld". It is a class that extends the `React.Component` class, which allows it to be a React component. The `render()` method of the component returns the HTML that should be displayed on the web page.
+
+In this case, the `render()` method returns a `div` element containing an `h1` element with the text "Hello, World!". Finally, we use the `ReactDOM.render()` function to render the `HelloWorld` component to the web page.
